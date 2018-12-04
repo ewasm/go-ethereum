@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"math/big"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/cmd/utils"
@@ -51,7 +53,15 @@ func TestState(t *testing.T) {
 
 	st.walk(t, stateTestDir, func(t *testing.T, name string, test *StateTest) {
 		for _, subtest := range test.Subtests() {
+			// if  {
+			// panic("EWAMS!!!!")
+			// }
 			subtest := subtest
+			config, ok := Forks[subtest.Fork]
+			if ok && strings.Contains(name, "stEWASMTests") {
+				config.EWASMBlock = &big.Int{}
+			}
+
 			key := fmt.Sprintf("%s/%d", subtest.Fork, subtest.Index)
 			name := name + "/" + key
 			t.Run(key, func(t *testing.T) {
@@ -60,6 +70,10 @@ func TestState(t *testing.T) {
 					return st.checkFailure(t, name, err)
 				})
 			})
+
+			if ok && strings.Contains(name, "stEWASMTests") {
+				config.EWASMBlock = nil
+			}
 		}
 	})
 }
