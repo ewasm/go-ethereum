@@ -53,9 +53,6 @@ func TestState(t *testing.T) {
 
 	st.walk(t, stateTestDir, func(t *testing.T, name string, test *StateTest) {
 		for _, subtest := range test.Subtests() {
-			// if  {
-			// panic("EWAMS!!!!")
-			// }
 			subtest := subtest
 			config, ok := Forks[subtest.Fork]
 			if ok && strings.Contains(name, "stEWASMTests") {
