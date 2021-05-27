@@ -43,6 +43,11 @@ func hasEOFMagic(code []byte) bool {
 	return 1+magicLen <= codeLen && bytes.Equal(code[1:1+magicLen], eofMagic[:])
 }
 
+// isEOFCode returns true if code starts with valid FORMAT byte + EOF magic
+func isEOFCode(code []byte) bool {
+	return hasFormatByte(code) && hasEOFMagic(code)
+}
+
 // readEOF1Header parses EOF1-formatted code header
 func readEOF1Header(code []byte) (eof1Header, error) {
 	if !hasFormatByte(code) {
@@ -123,4 +128,16 @@ sectionLoop:
 func validateEOF(code []byte) bool {
 	_, err := readEOF1Header(code)
 	return err == nil
+}
+
+// readValidEOF1Header parses EOF1-formatted code header, assuming that it is already validated
+func readValidEOF1Header(code []byte) eof1Header {
+	var header eof1Header
+	codeSizeOffset := 3 + len(eofMagic)
+	header.codeSize = binary.BigEndian.Uint16(code[codeSizeOffset : codeSizeOffset+2])
+	if code[codeSizeOffset+2] == 2 {
+		dataSizeOffset := codeSizeOffset + 3
+		header.dataSize = binary.BigEndian.Uint16(code[dataSizeOffset : dataSizeOffset+2])
+	}
+	return header
 }

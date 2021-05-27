@@ -50,6 +50,8 @@ type Contract struct {
 	caller        ContractRef
 	self          ContractRef
 
+	header eof1Header
+
 	jumpdests map[common.Hash]bitvec // Aggregated result of JUMPDEST analysis.
 	analysis  bitvec                 // Locally cached result of JUMPDEST analysis
 
@@ -182,18 +184,38 @@ func (c *Contract) Value() *big.Int {
 	return c.value
 }
 
+// CodeBeginOffset returns starting offset of the code section
+func (c *Contract) CodeBeginOffset() uint64 {
+	if c.header.codeSize == 0 {
+		// Legacy contract
+		return 0
+	}
+	if c.header.dataSize == 0 {
+		// FORMAT + len(magic) + version + code_section_id + code_section_size + terminator
+		return uint64(6 + len(eofMagic))
+	}
+	// FORMAT + len(magic) + version + code_section_id + code_section_size + data_section_id + data_section_size + terminator
+	return uint64(9 + len(eofMagic))
+}
+
 // SetCallCode sets the code of the contract and address of the backing data
 // object
-func (c *Contract) SetCallCode(addr *common.Address, hash common.Hash, code []byte) {
+func (c *Contract) SetCallCode(addr *common.Address, hash common.Hash, code []byte, header *eof1Header) {
 	c.Code = code
 	c.CodeHash = hash
 	c.CodeAddr = addr
+
+	c.header.codeSize = header.codeSize
+	c.header.dataSize = header.dataSize
 }
 
 // SetCodeOptionalHash can be used to provide code, but it's optional to provide hash.
 // In case hash is not provided, the jumpdest analysis will not be saved to the parent context
-func (c *Contract) SetCodeOptionalHash(addr *common.Address, codeAndHash *codeAndHash) {
+func (c *Contract) SetCodeOptionalHash(addr *common.Address, codeAndHash *codeAndHash, header *eof1Header) {
 	c.Code = codeAndHash.code
 	c.CodeHash = codeAndHash.hash
 	c.CodeAddr = addr
+
+	c.header.codeSize = header.codeSize
+	c.header.dataSize = header.dataSize
 }

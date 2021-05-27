@@ -127,3 +127,38 @@ func TestValidateEOF(t *testing.T) {
 		}
 	}
 }
+
+func TestIsEOFCode(t *testing.T) {
+
+	for _, test := range eof1ValidTests {
+		if !isEOFCode(common.Hex2Bytes(test.code)) {
+			t.Errorf("code %v expected to be EOF", test.code)
+		}
+	}
+
+	// invalid but still EOF
+	for _, test := range eof1InvalidTests {
+		if !isEOFCode(common.Hex2Bytes(test.code)) {
+			t.Errorf("code %v expected to be EOF", test.code)
+		}
+	}
+
+	for _, test := range notEOFTests {
+		if isEOFCode(common.Hex2Bytes(test.code)) {
+			t.Errorf("code %v expected to be not EOF", test.code)
+		}
+	}
+}
+
+func TestReadValidEOF1Header(t *testing.T) {
+
+	for _, test := range eof1ValidTests {
+		header := readValidEOF1Header(common.Hex2Bytes(test.code))
+		if header.codeSize != test.codeSize {
+			t.Errorf("code %v codeSize expected %v, got %v", test.code, test.codeSize, header.codeSize)
+		}
+		if header.dataSize != test.dataSize {
+			t.Errorf("code %v dataSize expected %v, got %v", test.code, test.dataSize, header.dataSize)
+		}
+	}
+}
