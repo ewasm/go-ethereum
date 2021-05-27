@@ -150,7 +150,7 @@ func (c *Contract) GetOp(n uint64) OpCode {
 
 // GetByte returns the n'th byte in the contract's byte array
 func (c *Contract) GetByte(n uint64) byte {
-	if n < uint64(len(c.Code)) {
+	if n < c.CodeEndOffset() {
 		return c.Code[n]
 	}
 
@@ -196,6 +196,14 @@ func (c *Contract) CodeBeginOffset() uint64 {
 	}
 	// FORMAT + len(magic) + version + code_section_id + code_section_size + data_section_id + data_section_size + terminator
 	return uint64(9 + len(eofMagic))
+}
+
+func (c *Contract) CodeEndOffset() uint64 {
+	if c.header.codeSize == 0 {
+		// Legacy contract
+		return uint64(len(c.Code))
+	}
+	return c.CodeBeginOffset() + uint64(c.header.codeSize)
 }
 
 // SetCallCode sets the code of the contract and address of the backing data
