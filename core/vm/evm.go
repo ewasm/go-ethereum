@@ -418,6 +418,15 @@ func (c *codeAndHash) Hash() common.Hash {
 	return c.hash
 }
 
+func hasEIP3540(vmConfig *Config) bool {
+	for _, eip := range vmConfig.ExtraEips {
+		if eip == 3540 {
+			return true
+		}
+	}
+	return false
+}
+
 // create creates a new contract using code as deployment code.
 func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address) ([]byte, common.Address, uint64, error) {
 	// Depth check execution. Fail if we're trying to execute above the
@@ -469,9 +478,16 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 		err = ErrMaxCodeSizeExceeded
 	}
 
-	// Reject code starting with 0xEF if EIP-3541 is enabled.
-	if err == nil && len(ret) >= 1 && ret[0] == 0xEF && evm.chainRules.IsLondon {
-		err = ErrInvalidCode
+	if err == nil && hasFormatByte(ret) {
+		if hasEIP3540(&evm.vmConfig) {
+			// Allow only valid EOF1 if EIP-3540 is enabled.
+			if !validateEOF(ret) {
+				err = ErrInvalidCodeFormat
+			}
+		} else if evm.chainRules.IsLondon {
+			// Reject code starting with 0xEF in London.
+			err = ErrInvalidCode
+		}
 	}
 
 	// if the contract creation ran successfully and no errors were returned
