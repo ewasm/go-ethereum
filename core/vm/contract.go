@@ -154,7 +154,12 @@ func (c *Contract) GetByte(n uint64) byte {
 		return c.Code[n]
 	}
 
-	return 0
+	// For legacy contracts running out of code section means STOP
+	if c.header.codeSize == 0 {
+		return 0
+	}
+	// For EOF contracts running out of code section means abort execution with failure
+	return 0xfe
 }
 
 // Caller returns the caller of the contract.
